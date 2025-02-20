@@ -1,33 +1,37 @@
-<html>
-<body>
-    <video id="video" autoplay></video>
-    <canvas id="canvas"></canvas>
-    <img id="output" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Detection</title>
     <script>
-        const video = document.getElementById("video");
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
-        const output = document.getElementById("output");
-
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => video.srcObject = stream)
-            .catch(err => console.error("Camera error:", err));
-
-        function captureFrame() {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(blob => {
-                const formData = new FormData();
-                formData.append("video", blob);
-                fetch("/video_feed", { method: "POST", body: formData })
-                    .then(response => response.blob())
-                    .then(blob => output.src = URL.createObjectURL(blob))
-                    .catch(err => console.error("Processing error:", err));
-            }, "image/jpeg");
+        function checkObject() {
+            fetch("/check_object")
+                .then(response => response.json())
+                .then(data => {
+                    let button = document.getElementById("captureButton");
+                    if (data.object_detected) {
+                        button.style.display = "none";  // Hide button if object is detected
+                    } else {
+                        button.style.display = "block"; // Show button if no object
+                    }
+                });
         }
+        setInterval(checkObject, 1000);  // Check every second
+    </script>
+</head>
+<body>
+    <h1>Live Object Detection</h1>
+    <img id="videoStream" src="{{ url_for('video_feed') }}" width="640" height="480">
+    
+    <!-- Capture Button (Initially Hidden) -->
+    <button id="captureButton" style="display: none;" onclick="captureImage()">Capture</button>
 
-        setInterval(captureFrame, 100); // Send frames every 100ms
+    <script>
+        function captureImage() {
+            fetch("/capture")
+                .then(response => alert("Image Captured"));
+        }
     </script>
 </body>
 </html>
